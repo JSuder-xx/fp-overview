@@ -13,11 +13,14 @@ and pique interest but then the [E03Traversable](./src/Abstraction/E03Traversabl
     - Either only worked in academia.
     - Or have only built functional programs of a _relatively_ small size. FP removes the possibility for so many errors that engineers can afford to defer good engineering practices much longer than in imperative languages. BUT not indefinitely! 50K lines of a functional codebase without applying SOLID and encapsulating is spaghetti.
     - Or have only worked on functional programs that are exceedingly logic heavy and data modeling light.
-    - Or moved to FP to _escape_ from the perceived faults of OO where those faults had more to do with their understanding of OO than OO itself. That is harsh but I have experience of
-    several prominent / influential engineers that are highly critical of OO where those engineers had _ZERO_ knowledge of Domain Driven Design, Hexagonal Architecture,
-    the writings of Martin Fowler, the writings of Robert Martin, and had little or immature understanding of Design Patterns. In other words, they had novice to intermediate level
-    knowledge of OO or a view of OO from 1995 and yet speak very publicly about OO's faults as if experts on the subject. In truth, the engineers I am describing are all
-    extremely intelligent (and often charismatic) so I have found that a lot of those new to FP "buy it".
+    - Or moved to FP to _escape_ from the perceived faults of OO where those faults had more to do with their ignorance of OO than OO itself. That is harsh but I have experience of
+    several prominent / influential engineers highly critical of OO with _ZERO_ knowledge of Domain Driven Design, Hexagonal Architecture,
+    the writings of Martin Fowler, the writings of Robert Martin, and little or immature understanding of Design Patterns. In other words, they had novice to intermediate level
+    knowledge of OO or a view of OO from 1995 and yet speak, very publicly, about OO's faults as if experts on the subject. In truth, the engineers I am describing are all
+    extremely intelligent (and often charismatic) and many who listen to them are excited to be free of having to learn good ol'fashioned boring engineering and data modeling practices.
+    Their followers are excited to be part of the FP club as if it were completely distinct from the rest of enterprise application development. The truth is that if
+    you are building a large enterprise application with many data models and a large team you are going to be using a LOT of the same engineering principles in FP as in OO. It is
+    just that the FP languages provide distinctly more elegant and precise tools for the realization of those concepts.
   - SOLID, encapsulation, and abstraction are every bit as applicable in FP as in OO. Furthermore, the notion that behavior
   should be grouped with types exists in Haskell, PureScript, OCaml, and F# communities (to name a few). The only difference is that in FP the behavior is
   not strictly bound to its type. Other modules can extend the behavior of a type, but the .NET clearly appreciates the merits of extrinsic behavior or they
