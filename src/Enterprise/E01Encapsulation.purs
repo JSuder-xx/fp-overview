@@ -5,6 +5,7 @@ module Enterprise.E02Encapsulation
   , deposit
   , id
   , mkBankAccount
+  , mkBankAccount'
   , total
   , transactions
   , withdraw
@@ -73,16 +74,19 @@ module Enterprise.E02Encapsulation
 -- | - Operations that update the data type and which CAN fail are written two different ways. We will cover the more basic in this module
 -- |   `OPERATION :: PARAM1 -> PARAM2 -> DATATYPE -> EITHER ERROR_TYPE DATATYPE`. That is a function that takes the data type as the last argument and
 -- |   returns an EITHER indicating it could have failed.
+-- |
+-- | Opaque data types, by encapsulating logic give us the ability to make assumptions about "correct upon construction" in different Apis.
 
 import Prelude
 
 import Data.Array as Array
 import Data.DateTime (DateTime)
-import Data.Either (Either(..))
+import Data.Either (Either(..), note)
 import Data.Foldable (foldMap)
 import Data.Lens (Lens')
 import Data.Lens as Lens
 import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.UUID (UUID)
 import Enterprise.BankConfig (BankConfig)
 import Enterprise.Transaction (Transaction(..))
@@ -102,6 +106,14 @@ type BankAccountRecord =
 mkBankAccount :: BankAccountId -> { name :: NonEmptyString } -> BankAccount
 mkBankAccount id' { name } =
   BankAccount { id: id', name, transactions: [] }
+
+-- This version of the constructor is what is called a "smart constructor". It can fail. However,
+-- because the constructor itself is not exposed engineers know that if they have a `BankAccount` that
+-- it is valid.
+mkBankAccount' :: BankAccountId -> { name :: String } -> Either String BankAccount
+mkBankAccount' id' r = NonEmptyString.fromString r.name
+  # note "Name must not be empty"
+  <#> \name -> BankAccount { id: id', name, transactions: [] }
 
 id :: BankAccount -> BankAccountId
 id = _.id <<< bankAccountRecord
