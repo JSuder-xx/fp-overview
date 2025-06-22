@@ -42,7 +42,7 @@ noneOfTheBunch = ff
 anyOfTheBunch :: BunchOfBools -> BunchOfBools -> BunchOfBools
 anyOfTheBunch x y = x || y
 
--- In PureScript, any function that returns a `HeytingAlgebra` is, itself, an instance of a `HeytingAlgebra`!!! This means that you can combine predicates!
+-- In PureScript, any function that returns a `HeytingAlgebra` is, itself, an instance of a `HeytingAlgebra`!!! This means you can combine predicates!
 
 type Person = { heightInInches :: Int, weightInLbs :: Int }
 
@@ -69,9 +69,7 @@ canRideEverything =
 --   -- some body
 --   where
 --   allCanRide :: Boolean
---
---   allCanRide = allPeople # Array.all canRideEverything
---   canRideEverything person = canRideKiddieRide person && canRideWaterSlide george && canRideDeathDragon { worriedAboutGettingSued: true } cindy
+--   allCanRide = allPeople # Array.all \person -> canRideKiddieRide person && canRideWaterSlide george && canRideDeathDragon { worriedAboutGettingSued: true } cindy
 -- ```
 
 -- The ability recurses indefinitely.
@@ -107,7 +105,7 @@ instance HeytingAlgebra Temperature where
 
 data BoolExpr
   = Literal Boolean
-  | ReadVariableName String
+  | ReadVariable String
   | Or BoolExpr BoolExpr
   | And BoolExpr BoolExpr
   | Not BoolExpr
@@ -121,12 +119,12 @@ instance HeytingAlgebra BoolExpr where
   implies x y = not x || y
 
 -- a little interpreter for our DSL
-interpretBoolExpr :: Map String Boolean -> BoolExpr -> Either String Boolean
-interpretBoolExpr variables = interpret'
+runBoolExpr :: BoolExpr -> Map String Boolean -> Either String Boolean
+runBoolExpr rootExpr variables = interpret' rootExpr
   where
-  interpret' expr = case expr of
+  interpret' = case _ of
     Literal x -> pure x
-    ReadVariableName name -> note ("Unable to find variable '" <> name <> "'") $ Map.lookup name variables
+    ReadVariable name -> note ("Unable to find variable '" <> name <> "'") $ Map.lookup name variables
     Or x y -> lift2 (||) (interpret' x) (interpret' y)
     And x y -> lift2 (&&) (interpret' x) (interpret' y)
     Not x -> not <$> interpret' x
@@ -134,4 +132,4 @@ interpretBoolExpr variables = interpret'
 exampleExpression :: BoolExpr
 exampleExpression =
   -- observe that we can use `not`, `||`, and `&&` to build up an expression in our small DSL
-  not (Literal false || ReadVariableName "x") && ReadVariableName "y"
+  not (ReadVariable "x" || ReadVariable "y") && ReadVariable "y"
