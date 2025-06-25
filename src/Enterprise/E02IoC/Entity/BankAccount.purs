@@ -2,10 +2,11 @@ module Enterprise.E02IoC.Entity.BankAccount
   ( BankAccountId(..)
   , BankAccount -- OBSERVE that the constructor is not exposed. This is what is called an Opaque Data type.
   , _name
+  , balance
   , deposit
   , id
   , mkBankAccount
-  , total
+  , name
   , transactions
   , withdraw
   ) where
@@ -21,6 +22,7 @@ import Data.Foldable (foldMap)
 import Data.Lens (Lens')
 import Data.Lens as Lens
 import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.UUID (UUID)
 import Enterprise.BankConfig (HasBankConfig)
 import Enterprise.E02IoC.Ports.CurrentTime (class CurrentTime, currentTime)
@@ -43,9 +45,12 @@ type BankAccountRecord =
   , transactions :: Array Transaction
   }
 
+derive instance Eq BankAccount
+derive newtype instance Show BankAccount
+
 mkBankAccount :: BankAccountId -> { name :: NonEmptyString } -> BankAccount
-mkBankAccount id' { name } =
-  BankAccount { id: id', name, transactions: [] }
+mkBankAccount id' r =
+  BankAccount { id: id', name: r.name, transactions: [] }
 
 id :: BankAccount -> BankAccountId
 id = _.id <<< bankAccountRecord
@@ -53,11 +58,14 @@ id = _.id <<< bankAccountRecord
 transactions :: BankAccount -> Array Transaction
 transactions = _.transactions <<< bankAccountRecord
 
+name :: BankAccount -> String
+name = NonEmptyString.toString <<< _.name <<< bankAccountRecord
+
 _name :: Lens' BankAccount NonEmptyString
 _name = _bankAccountRecord <<< Lens.lens _.name _ { name = _ }
 
-total :: BankAccount -> USCents
-total = transactions >>> foldMap Transaction.netEffectOnBalance
+balance :: BankAccount -> USCents
+balance = transactions >>> foldMap Transaction.netEffectOnBalance
 
 withdraw
   :: forall m
@@ -66,7 +74,7 @@ withdraw
   -> BankAccount
   -> m (Either TransactionError BankAccount)
 withdraw amount bankAccount =
-  if total bankAccount < amount then pure $ Left TransactionError.InsufficientFunds
+  if balance bankAccount < amount then pure $ Left TransactionError.InsufficientFunds
   else currentTime <#> \when -> Right $ Lens.over _transactions (Array.cons $ Withdrawal { when, amount }) bankAccount
 
 deposit
@@ -78,7 +86,7 @@ deposit
   -> m (Either TransactionError BankAccount)
 deposit depositAmount bankAccount = runExceptT do
   { bankConfig: { maximumInsurableBalance } } <- ask
-  when (total bankAccount $+ depositAmount > maximumInsurableBalance) $
+  when (balance bankAccount $+ depositAmount > maximumInsurableBalance) $
     throwError TransactionError.UnableToInsureBalance
   when <- lift currentTime
   pure $ Lens.over _transactions (Array.cons $ Deposit { when, amount: depositAmount }) bankAccount

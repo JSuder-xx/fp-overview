@@ -6,7 +6,7 @@ module Enterprise.E02Encapsulation
   , id
   , mkBankAccount
   , mkBankAccount'
-  , total
+  , balance
   , transactions
   , withdraw
   ) where
@@ -124,8 +124,8 @@ transactions = _.transactions <<< bankAccountRecord
 _name :: Lens' BankAccount NonEmptyString
 _name = _bankAccountRecord <<< Lens.lens _.name _ { name = _ }
 
-total :: BankAccount -> USCents
-total = transactions >>> foldMap Transaction.netEffectOnBalance
+balance :: BankAccount -> USCents
+balance = transactions >>> foldMap Transaction.netEffectOnBalance
 
 -- OBSERVE that this function is fully transparent about the fact that it will throw an error.
 -- One might worry that returning an `Either` will make consumption tedious because it seems like
@@ -137,12 +137,12 @@ total = transactions >>> foldMap Transaction.netEffectOnBalance
 -- be tedious. We will see how to deal with this later.
 withdraw :: { currentTime :: DateTime } -> USCents -> BankAccount -> Either TransactionError.TransactionError BankAccount
 withdraw { currentTime } amount bankAccount =
-  if total bankAccount < amount then Left TransactionError.InsufficientFunds
+  if balance bankAccount < amount then Left TransactionError.InsufficientFunds
   else Right $ Lens.over _transactions (Array.cons $ Withdrawal { when: currentTime, amount }) bankAccount
 
 deposit :: BankConfig -> { currentTime :: DateTime } -> USCents -> BankAccount -> Either TransactionError.TransactionError BankAccount
 deposit config { currentTime } amount bankAccount =
-  if total bankAccount $+ amount > config.maximumInsurableBalance then Left TransactionError.UnableToInsureBalance
+  if balance bankAccount $+ amount > config.maximumInsurableBalance then Left TransactionError.UnableToInsureBalance
   else Right $ Lens.over _transactions (Array.cons $ Deposit { when: currentTime, amount }) bankAccount
 
 ---------------------------------------------------------------------------------

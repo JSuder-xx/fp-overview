@@ -2,7 +2,6 @@ module Abstraction.E01HeytingAlgebra.BoolExpr
   ( BoolExpr -- CONSTRUCTORS NOT EXPORTED
   , runBoolExpr
   , readVariable
-  , exampleExpression
   ) where
 
 import Prelude
@@ -51,8 +50,3 @@ readVariable
   => Cons fieldName Boolean r' r
   => BoolExpr r
 readVariable = ReadVariable $ reflectSymbol (Proxy :: Proxy fieldName)
-
-exampleExpression :: BoolExpr (x :: Boolean, y :: Boolean, z :: Boolean)
-exampleExpression =
-  -- observe that we can use `not`, `||`, and `&&` to build up an expression in our small DSL
-  not (readVariable @"x" || readVariable @"y") && readVariable @"z"

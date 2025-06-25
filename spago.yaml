@@ -18,7 +18,10 @@ package:
     - uuid
   test:
     main: Test.Main
-    dependencies: []
+    dependencies:
+      - js-date
+      - spec
+      - spec-node
 workspace:
   packageSet:
     registry: 65.0.0

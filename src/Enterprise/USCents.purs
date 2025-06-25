@@ -12,6 +12,7 @@ newtype USCents = USCents Int
 
 derive instance Eq USCents
 derive instance Ord USCents
+derive newtype instance Show USCents
 
 instance Semigroup USCents where
   append = addCents

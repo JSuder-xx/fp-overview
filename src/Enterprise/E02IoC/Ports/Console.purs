@@ -1,21 +1,20 @@
 module Enterprise.E02IoC.Ports.Console
   ( class Console
+  , displayOptions
   , readLn
   , writeLn
-  , selection
   , readLnParsed
+  , prompt
   , promptYesNo
   ) where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadThrow)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (for_)
+import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String as String
-import Enterprise.Exception (Exception)
 
 -- | An ABSTRACT representation of a monad that implements console-like behavior or a text user interface.
 -- | This abstraction can be implemented for unit tests using a concrete State data type where
@@ -24,7 +23,7 @@ import Enterprise.Exception (Exception)
 -- |
 -- | The unit tests initialize the state with an array of strings that should act as inputs
 -- | and upon completion the tests can inspect 1. Values written to a log. 2. How many of the inputs remain.
-class (MonadThrow Exception m, Monad m) <= Console m where
+class Monad m <= Console m where
   writeLn :: String -> m Unit
   readLn :: m String
 
@@ -39,17 +38,14 @@ readLnParsed parse = do
       else readLnParsed parse
     Right x -> pure $ Just x
 
-selection :: forall m a. Eq a => Console m => { default :: Maybe a } -> Array { char :: Char, description :: String, value :: a } -> String -> m a
-selection { default } options promptMessage = do
-  writeLn promptMessage
-  for_ options \option -> writeLn $ charToString option.char <> " - " <> option.description
-  prompt { default } options "Selection"
+displayOptions :: forall m r. Console m => Array { char :: Char, description :: String | r } -> m Unit
+displayOptions = traverse_ \option -> writeLn $ charToString option.char <> " - " <> option.description
 
 prompt :: forall m a r. Eq a => Console m => { default :: Maybe a } -> Array { char :: Char, value :: a | r } -> String -> m a
 prompt { default } options promptMessage = go
   where
   go = do
-    writeLn $ promptMessage <> ". " <> defaultPrompt
+    writeLn $ promptMessage <> "? " <> defaultPrompt
     response <- readLn
     if response == "" then default # maybe go pure
     else

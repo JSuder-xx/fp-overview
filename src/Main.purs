@@ -67,6 +67,7 @@ instance BankAccountRepository AppM where
     { bankAccountsRef } <- ask
     bankAccounts <- liftEffect $ read bankAccountsRef
     liftEffect $ write (Map.insert (BankAccount.id bankAccount) bankAccount bankAccounts) bankAccountsRef
+    pure bankAccount
 
 instance Console AppM where
   writeLn = log
