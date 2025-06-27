@@ -30,7 +30,8 @@ import Enterprise.USCents as USCents
 -- | - `MonadAsk` may read some configuration when it is finally run.
 -- | - `CurrentTime` may read the current time. HOWEVER, it is doing so through `CurrentTime` which means that it is not getting the time from anywhere else.
 -- | - `MonadError` may throw an error.
--- | - `Console` may read/write text from and to a virtual console.
+-- | - `Console` may read/write text from and to a virtual console. This could be implemented one way for tests, one way for a NodeJS application
+-- | and another way for a web browser that displayed a Text area for output and a single input for collecting readLn's.
 manageBankAccount
   :: forall m rConfig
    . BankAccountRepository m
@@ -58,18 +59,15 @@ manageBankAccount bankAccountId = do
       CheckBalance -> do
         Console.writeLn $ "Current Balance: " <> (USCents.format $ BankAccount.balance bankAccount)
         manageBankAccount' bankAccount
-      WithdrawFunds -> do
-        Console.writeLn "How much would you like to withdraw?"
-        onJust (Console.readLnParsed USCents.parse) \amount ->
-          processBankResult =<< BankAccount.withdraw amount bankAccount
-      DepositFunds -> do
-        Console.writeLn "How much would you like to deposit?"
-        onJust (Console.readLnParsed USCents.parse) \amount ->
-          processBankResult =<< BankAccount.deposit amount bankAccount
+      WithdrawFunds -> executeBalanceOperation BankAccount.withdraw "How much would you like to withdraw?"
+      DepositFunds -> executeBalanceOperation BankAccount.deposit "How much would you like to deposit?"
       ChangeName -> do
         Console.writeLn $ "The current name is '" <> BankAccount.name bankAccount <> "'. What would you like it to be?"
         onJust (Console.readLnParsed $ note "Must be non-empty" <<< NonEmptyString.fromString) \name ->
-          (manageBankAccount' <=< saveBankAccount) $ Lens.set BankAccount._name name bankAccount
+          bankAccount
+            # Lens.set BankAccount._name name
+            # saveBankAccount
+            >>= manageBankAccount'
     where
     operationOptions =
       [ { char: '1', description: "Check Balance", value: CheckBalance }
@@ -79,14 +77,18 @@ manageBankAccount bankAccountId = do
       , { char: '5', description: "Quit", value: Quit }
       ]
 
-    processBankResult = case _ of
-      Left err -> do
-        Console.writeLn $ TransactionError.display err
-        manageBankAccount' bankAccount
-      Right newBankAccount -> do
-        void $ saveBankAccount newBankAccount
-        Console.writeLn $ "The new balance is " <> (USCents.format $ BankAccount.balance newBankAccount)
-        manageBankAccount' newBankAccount
+    executeBalanceOperation op prompt = do
+      Console.writeLn prompt
+      onJust (Console.readLnParsed USCents.parse) \amount -> do
+        result' <- op amount bankAccount
+        case result' of
+          Left err -> do
+            Console.writeLn $ TransactionError.display err
+            manageBankAccount' bankAccount
+          Right newBankAccount -> do
+            void $ saveBankAccount newBankAccount
+            Console.writeLn $ "The new balance is " <> (USCents.format $ BankAccount.balance newBankAccount)
+            manageBankAccount' newBankAccount
 
 data Operation = CheckBalance | WithdrawFunds | DepositFunds | ChangeName | Quit
 

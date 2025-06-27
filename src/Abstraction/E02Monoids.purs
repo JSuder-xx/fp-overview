@@ -3,9 +3,11 @@ module Abstraction.E02Monoids where
 import Prelude
 
 import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Map (Map)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (guard)
 import Data.String as String
+import Effect.Aff (Aff)
 
 -- Any data type that can be combined while obeying associativity laws is an instance of a Semigroup.
 -- The combination operator is `<>`. One might expect `++` but, presumably, the authors of Haskell/PureScript
@@ -64,14 +66,33 @@ emptyWeird = mempty
 memptyWeirdFn :: WeirdFn
 memptyWeirdFn = mempty
 
+-- Also, there's ton's of container-like types that can act as Semigroups or Monoids if their contained value is a Semigroup or Monoid.
+
+combinedAffs :: Aff (Array String) -> Aff (Array String) -> Aff (Array String)
+combinedAffs x y = x <> y -- we can literally just combined two promise-like things if their contents can be combined.
+
+emptyAff :: Aff (Array Int)
+emptyAff = mempty
+
+combinedMaybes :: Maybe (Array String) -> Maybe (Array String) -> Maybe (Array String)
+combinedMaybes x y = x <> y -- we can literally just combined two promise-like things if their contents can be combined.
+
+emptyMaybe :: Maybe (Array Int)
+emptyMaybe = mempty
+
+combinedMaps :: forall k v. Ord k => Map k (Array v) -> Map k (Array v) -> Map k (Array v)
+combinedMaps x y = x <> y -- if there is a key collision then the two arrays are appended
+
 -- Just like with HeytingAlgebras you can make your own data types instances of Monoid.
 
 newtype Increment = Increment Int
 
 instance Semigroup Increment where
+  -- implementing this manually but actually the compiler can derive this.
   append (Increment x) (Increment y) = Increment $ x + y
 
 instance Monoid Increment where
+  -- implementing this manually but actually the compiler can derive this.
   mempty = Increment 0
 
 add1 :: Increment -> Increment
@@ -141,9 +162,12 @@ greetingUsingFold { firstName, favoriteFood, favoriteNumber } =
 greetingMaybe :: forall r. Maybe (MiniPerson r) -> String
 greetingMaybe = foldMap greetingUsingFold
 
+greetingMaybe2 :: forall r. Maybe (MiniPerson r) -> String
+greetingMaybe2 = maybe mempty greetingUsingFold -- this uses the `maybe` function which is a pattern matching function on Maybe's.
+
 greetingMaybeCase :: forall r. Maybe (MiniPerson r) -> String
 greetingMaybeCase maybePerson =
-  -- this demonstrates using a case matching to accomplish the same thing
+  -- this demonstrates using a case matching to accomplish the same thing as foldMap.
   case maybePerson of
     Nothing -> ""
     Just person -> greetingUsingFold person

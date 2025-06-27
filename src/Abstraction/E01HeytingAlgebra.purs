@@ -7,6 +7,7 @@ import Data.Either (Either, note)
 import Data.HeytingAlgebra (ff, tt)
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Tuple (Tuple(..))
 
 -- The Boolean operators for conjunction (&&, and), disjunction (||, or), and negation (not) operate only on Boolean values for most programming languages.
 
@@ -42,6 +43,18 @@ noneOfTheBunch = ff
 anyOfTheBunch :: BunchOfBools -> BunchOfBools -> BunchOfBools
 anyOfTheBunch x y = x || y
 
+-- A record is a product type with labels... a tuple is a simple product type with no labels. So it shouldn't be shocking that if a record is a HeytingAlgebra that so
+-- is a Tuple.
+
+tupleAnd :: Tuple Boolean Boolean
+tupleAnd = Tuple false false && Tuple false false
+
+tupleOr :: Tuple Boolean BunchOfBools
+tupleOr = Tuple false ff && Tuple false ff
+
+tupleCrazyOr :: Tuple (Tuple BunchOfBools Boolean) BunchOfBools
+tupleCrazyOr = Tuple tt ff || Tuple ff tt
+
 -- In PureScript, any function that returns a `HeytingAlgebra` is, itself, an instance of a `HeytingAlgebra`!!! This means you can combine predicates!
 
 type Person = { heightInInches :: Int, weightInLbs :: Int }
@@ -72,7 +85,7 @@ canRideEverything =
 --   allCanRide = allPeople # Array.all \person -> canRideKiddieRide person && canRideWaterSlide george && canRideDeathDragon { worriedAboutGettingSued: true } cindy
 -- ```
 
--- The ability recurses indefinitely.
+-- The ability recurses indefinitely as we saw with the Tuple example.
 
 type NestedExample =
   { bool :: Boolean
